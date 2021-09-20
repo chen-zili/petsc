@@ -89,11 +89,11 @@ PetscErrorCode ComputeRHS(KSP ksp,Vec b,void *ctx)
         } else {
           barray[k][j][i] = Hx*Hy*Hz;
         }
-        printf("%f ", barray[k][j][i]);
+        // printf("%f ", barray[k][j][i]);
       }
-      printf("\n");
+      // printf("\n");
     }
-    printf("\n");
+    // printf("\n");
   }
   ierr = DMDAVecRestoreArray(dm,b,&barray);CHKERRQ(ierr);
   PetscFunctionReturn(0);
