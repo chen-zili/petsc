@@ -1,3 +1,5 @@
+export PETSC_DIR=/home/chenzili/workSpace/petsc
+export PETSC_ARCH=arch-ci-linux-intel-mkl-single
 -include ../../../../petscdir.mk
 CFLAGS           =
 FFLAGS           =
