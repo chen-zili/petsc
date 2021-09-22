@@ -1,4 +1,4 @@
-export PETSC_DIR=/home/chenzili/workSpace/programs/petsc
+export PETSC_DIR=/home/zili/workSpace/programs/petsc
 export PETSC_ARCH=arch-ci-linux-intel-mkl-single
 
 -include ../../../../petscdir.mk

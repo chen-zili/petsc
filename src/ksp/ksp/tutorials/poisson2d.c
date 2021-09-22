@@ -85,11 +85,11 @@ int main(int argc, char **argv)
 	ierr = VecDuplicate(b, &r); CHKERRQ(ierr);
 	ierr = KSPGetOperators(ksp, &A, NULL); CHKERRQ(ierr);
 
-	// 打印A, x, b
-	printf("\nA:\n");
-	ierr = MatView(A, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);\
-	printf("\nx:\n");
-	ierr = VecView(x, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+	// // 打印A, x, b
+	// printf("\nA:\n");
+	// ierr = MatView(A, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);\
+	// printf("\nx:\n");
+	// ierr = VecView(x, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 	printf("\nb:\n");
 	ierr = VecView(b, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
@@ -142,14 +142,36 @@ PetscErrorCode ComputeRHS(KSP ksp, Vec b, void *ctx)
 	{
 		for (i=xs; i<xs+xm; i++) 
 		{
-			if (i==0 || j==0 || i==mx-1 || j==my-1 ) 
+			// if ((i == 0 && j == 0) || (i == 0 && j == my-1) || (i == mx-1 && j == 0) || (i == mx-1 && j == my-1))
+			// {
+			// 	barray[j][i] = 0.0;
+			// }
+			// else if (i==0 || j==0 || i==mx-1 || j==my-1 ) 
+			// {
+			// 	// 边界 b = 0
+			// 	barray[j][i] = 0.0;
+			// } 
+			// else 
+			// {
+			// 	barray[j][i] = 1.;
+			// }
+			if (0 == j)
 			{
-				// 边界 b = 0
+				// y = -1
 				barray[j][i] = 0.0;
-			} 
-			else 
+			}
+			else if (my-1 == j)
 			{
-				barray[j][i] = 1.;
+				// y = 1
+				barray[j][i] = 1.0;
+			}
+			else if (0 == i || mx-1 == i)
+			{
+				barray[j][i] = j / 64.0;
+			}
+			else
+			{
+				barray[j][i] = 0.0;
 			}
 			// printf("%f ", barray[j][i]);
 		}
@@ -194,13 +216,35 @@ PetscErrorCode ComputeMatrix(KSP ksp, Mat jac, Mat B, void *ctx)
 		for (i=xs; i<xs+xm; i++) 
 		{
 			row.i = i; row.j = j;
-			if (i==0 || j==0 || i==mx-1 || j==my-1) 
+			// if ((i == 0 && j == 0) || (i == 0 && j == my-1) || (i == mx-1 && j == 0) || (i == mx-1 && j == my-1))
+			// {
+			// 	// 边界
+			// 	v[0] = 1.0;
+			// 	ierr = MatSetValuesStencil(B, 1, &row, 1, &row, v, INSERT_VALUES); CHKERRQ(ierr);
+			// }
+			// else if (i==0 || i==mx-1) 
+			// {
+			// 	// 边界
+			// 	v[0] = -dHydHy; col[0].i = i; col[0].j = j-1;
+			// 	v[1] = 2.0*dHydHy; col[2].i = row.i; col[2].j = row.j;
+			// 	v[2] = -dHydHy; col[4].i = i; col[4].j = j+1;
+			// 	ierr = MatSetValuesStencil(B, 1, &row, 3, col, v, INSERT_VALUES); CHKERRQ(ierr);
+			// }
+			// else if (j ==0 || j == my-1)
+			// {
+			// 	// 边界
+			// 	v[0] = -dHxdHx; col[1].i = i-1; col[1].j = j;
+			// 	v[1] = 2.0*dHxdHx; col[2].i = row.i; col[2].j = row.j;
+			// 	v[2] = -dHxdHx; col[3].i = i+1; col[3].j = j;
+			// 	ierr = MatSetValuesStencil(B, 1, &row, 3, col, v, INSERT_VALUES); CHKERRQ(ierr);
+			// }
+			if (i == 0 || i == mx-1 || j == 0 || j == my-1)
 			{
 				// 边界
 				v[0] = 1.0;
 				ierr = MatSetValuesStencil(B, 1, &row, 1, &row, v, INSERT_VALUES); CHKERRQ(ierr);
-			} 
-			else 
+			}
+			else
 			{
 				v[0] = -dHydHy; col[0].i = i; col[0].j = j-1;
 				v[1] = -dHxdHx; col[1].i = i-1; col[1].j = j;
