@@ -4,11 +4,7 @@
 						- Laplacian u = 1      -1 < x, y < 1
 
 边界：          
-						x = -1  x = 1  y = -1  y = 1    -->    u = 0
-
-
-解析解:
-			  			u = -0.25x^2 + 0.25 - 0.25y^2 + 0.25
+						上边界为1, 下边界为0, 左右两侧从0到1(从下边界至上边界是0到1)
 
 
 离散化:
@@ -16,7 +12,7 @@
 
 	A: 
 		1.边界处
-						x = 0(可以设置为A=1, b=0)
+						A = 1
 			
 		2.非边界处
 			  			(-x(i-1, j) + 2x(i, j) - x(i+1, j)) / dx^2 + 
@@ -24,7 +20,9 @@
 
 	b:
 		1.边界处
-						b = 0
+						b = 1(上边界)
+						b = 0(下边界)
+						b = 0~1(左右侧)
 				
 		2.非边界处
 						b = 1
@@ -90,8 +88,8 @@ int main(int argc, char **argv)
 	// ierr = MatView(A, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);\
 	// printf("\nx:\n");
 	// ierr = VecView(x, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-	printf("\nb:\n");
-	ierr = VecView(b, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+	// printf("\nb:\n");
+	// ierr = VecView(b, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
 	// 输出结果到文件
 	PetscViewer myViewer;
@@ -128,10 +126,10 @@ PetscErrorCode ComputeRHS(KSP ksp, Vec b, void *ctx)
 	// 获取ksp绑定的dm信息
 	ierr = KSPGetDM(ksp, &dm); CHKERRQ(ierr);
 
-	// 从dm中获取x, y方向上的网格数(64, 64)
+	// 从dm中获取x, y方向上的格点数(m, m)
 	ierr = DMDAGetInfo(dm, 0, &mx, &my, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); CHKERRQ(ierr);
 
-	// 获取左下角(xs, ys)、右上角(xm, ym)坐标
+	// 获取左下角(xs, ys)、右上角(xm-1, ym-1)坐标
 	ierr = DMDAGetCorners(dm, &xs, &ys, 0, &xm, &ym, 0); CHKERRQ(ierr);
 	
 	// 获得Vec b存储空间的首地址
@@ -142,36 +140,23 @@ PetscErrorCode ComputeRHS(KSP ksp, Vec b, void *ctx)
 	{
 		for (i=xs; i<xs+xm; i++) 
 		{
-			// if ((i == 0 && j == 0) || (i == 0 && j == my-1) || (i == mx-1 && j == 0) || (i == mx-1 && j == my-1))
-			// {
-			// 	barray[j][i] = 0.0;
-			// }
-			// else if (i==0 || j==0 || i==mx-1 || j==my-1 ) 
-			// {
-			// 	// 边界 b = 0
-			// 	barray[j][i] = 0.0;
-			// } 
-			// else 
-			// {
-			// 	barray[j][i] = 1.;
-			// }
-			if (0 == j)
+			if (ys == j)
 			{
 				// y = -1
 				barray[j][i] = 0.0;
 			}
-			else if (my-1 == j)
+			else if (ys+ym-1 == j)
 			{
 				// y = 1
 				barray[j][i] = 1.0;
 			}
-			else if (0 == i || mx-1 == i)
+			else if (xs == i || xs+xm-1 == i)
 			{
-				barray[j][i] = j / 64.0;
+				barray[j][i] = j / (ym - 1.0);
 			}
 			else
 			{
-				barray[j][i] = 0.0;
+				barray[j][i] = 1.0;
 			}
 			// printf("%f ", barray[j][i]);
 		}
@@ -216,28 +201,6 @@ PetscErrorCode ComputeMatrix(KSP ksp, Mat jac, Mat B, void *ctx)
 		for (i=xs; i<xs+xm; i++) 
 		{
 			row.i = i; row.j = j;
-			// if ((i == 0 && j == 0) || (i == 0 && j == my-1) || (i == mx-1 && j == 0) || (i == mx-1 && j == my-1))
-			// {
-			// 	// 边界
-			// 	v[0] = 1.0;
-			// 	ierr = MatSetValuesStencil(B, 1, &row, 1, &row, v, INSERT_VALUES); CHKERRQ(ierr);
-			// }
-			// else if (i==0 || i==mx-1) 
-			// {
-			// 	// 边界
-			// 	v[0] = -dHydHy; col[0].i = i; col[0].j = j-1;
-			// 	v[1] = 2.0*dHydHy; col[2].i = row.i; col[2].j = row.j;
-			// 	v[2] = -dHydHy; col[4].i = i; col[4].j = j+1;
-			// 	ierr = MatSetValuesStencil(B, 1, &row, 3, col, v, INSERT_VALUES); CHKERRQ(ierr);
-			// }
-			// else if (j ==0 || j == my-1)
-			// {
-			// 	// 边界
-			// 	v[0] = -dHxdHx; col[1].i = i-1; col[1].j = j;
-			// 	v[1] = 2.0*dHxdHx; col[2].i = row.i; col[2].j = row.j;
-			// 	v[2] = -dHxdHx; col[3].i = i+1; col[3].j = j;
-			// 	ierr = MatSetValuesStencil(B, 1, &row, 3, col, v, INSERT_VALUES); CHKERRQ(ierr);
-			// }
 			if (i == 0 || i == mx-1 || j == 0 || j == my-1)
 			{
 				// 边界

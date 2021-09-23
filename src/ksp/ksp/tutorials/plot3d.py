@@ -38,8 +38,8 @@ if __name__ == '__main__':
     VecList = np.array(VecList)
     poissonResult = np.reshape(VecList, (size_2d, size_2d))
 
-    x = np.linspace(-1, 1, 65)
-    y = np.linspace(-1, 1, 65)
+    x = np.linspace(-1, 1, size_2d)
+    y = np.linspace(-1, 1, size_2d)
     xx, yy = np.meshgrid(x, y)
     zz = -0.25*xx**2 + 0.25 - 0.25*yy**2 + 0.25
 
