@@ -121,7 +121,7 @@ PetscErrorCode ComputeRHS(KSP ksp, Vec b, void *ctx)
 	PetscScalar    **barray;
 
 	PetscFunctionBeginUser;
-	ierr = VecSet(b, 1.); CHKERRQ(ierr);
+	// ierr = VecSet(b, 1.); CHKERRQ(ierr);
 
 	// 获取ksp绑定的dm信息
 	ierr = KSPGetDM(ksp, &dm); CHKERRQ(ierr);

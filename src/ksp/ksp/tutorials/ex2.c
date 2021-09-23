@@ -48,6 +48,7 @@ int main(int argc,char **args)
   ierr = MatCreate(PETSC_COMM_WORLD,&A);CHKERRQ(ierr);
   ierr = MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,m*n,m*n);CHKERRQ(ierr);
   ierr = MatSetFromOptions(A);CHKERRQ(ierr);
+
   ierr = MatMPIAIJSetPreallocation(A,5,NULL,5,NULL);CHKERRQ(ierr);
   ierr = MatSeqAIJSetPreallocation(A,5,NULL);CHKERRQ(ierr);
   ierr = MatSeqSBAIJSetPreallocation(A,1,5,NULL);CHKERRQ(ierr);
@@ -61,6 +62,8 @@ int main(int argc,char **args)
      rows of the matrix are locally owned.
   */
   ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
+
+   printf("Istart, Iend: %d, %d\n", Istart, Iend);
 
   /*
      Set matrix elements for the 2-D, five-point stencil in parallel.
@@ -76,7 +79,7 @@ int main(int argc,char **args)
 
    */
   for (Ii=Istart; Ii<Iend; Ii++) {
-    v = -1.0; i = Ii/n; j = Ii - i*n;
+    v = -1.0; i = Ii/n; j = Ii - i*n;     // 获取行(i)和列(j)的索引
     if (i>0)   {J = Ii - n; ierr = MatSetValues(A,1,&Ii,1,&J,&v,ADD_VALUES);CHKERRQ(ierr);}
     if (i<m-1) {J = Ii + n; ierr = MatSetValues(A,1,&Ii,1,&J,&v,ADD_VALUES);CHKERRQ(ierr);}
     if (j>0)   {J = Ii - 1; ierr = MatSetValues(A,1,&Ii,1,&J,&v,ADD_VALUES);CHKERRQ(ierr);}
@@ -93,6 +96,9 @@ int main(int argc,char **args)
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
+
+   // ierr = MatView(A, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+   
   /* A is symmetric. Set symmetric flag to enable ICC/Cholesky preconditioner */
   ierr = MatSetOption(A,MAT_SYMMETRIC,PETSC_TRUE);CHKERRQ(ierr);
 
@@ -184,7 +190,6 @@ int main(int argc,char **args)
      An alternative is PetscFPrintf(), which prints to a file.
   */
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
-
   /*
      Free work space.  All PETSc objects should be destroyed when they
      are no longer needed.
@@ -192,7 +197,7 @@ int main(int argc,char **args)
   ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
   ierr = VecDestroy(&u);CHKERRQ(ierr);  ierr = VecDestroy(&x);CHKERRQ(ierr);
   ierr = VecDestroy(&b);CHKERRQ(ierr);  ierr = MatDestroy(&A);CHKERRQ(ierr);
-
+  
   /*
      Always call PetscFinalize() before exiting a program.  This routine
        - finalizes the PETSc libraries as well as MPI
